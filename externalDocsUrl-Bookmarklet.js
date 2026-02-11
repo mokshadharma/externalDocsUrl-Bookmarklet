@@ -62,14 +62,23 @@ javascript:(function () {
   }
 
   /**
+   * Non-rendered elements whose text content should never be processed.
+   * When the walker's scope is document.body (fallback), these elements
+   * would otherwise match — e.g. GitHub embeds file contents as JSON
+   * inside <script> tags for SPA hydration.
+   */
+  const NON_RENDERED_TAGS = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT']);
+
+  /**
    * Walk the DOM within the given scopes and collect all text nodes
    * whose content contains the ${externalDocsUrl} placeholder.
    *
-   * The NodeFilter callback serves as a cheap pre-filter using a
-   * simple substring check (includes) rather than the full regex.
-   * Any false positives (e.g. the placeholder without a valid
-   * trailing path) are harmlessly handled downstream by
-   * buildFragmentFromMatches returning null.
+   * The NodeFilter callback rejects text inside non-rendered elements
+   * (script, style, template, noscript), then applies a cheap
+   * substring check (includes) rather than the full regex.  Any false
+   * positives (e.g. the placeholder without a valid trailing path)
+   * are harmlessly handled downstream by buildFragmentFromMatches
+   * returning null.
    */
   function collectMatchingNodes(scopes) {
     const nodes = [];
@@ -77,9 +86,11 @@ javascript:(function () {
     for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
         acceptNode: (node) =>
-          node.nodeValue.includes(PLACEHOLDER)
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_SKIP,
+          NON_RENDERED_TAGS.has(node.parentElement?.tagName)
+            ? NodeFilter.FILTER_REJECT
+            : node.nodeValue.includes(PLACEHOLDER)
+              ? NodeFilter.FILTER_ACCEPT
+              : NodeFilter.FILTER_SKIP,
       });
       while (walker.nextNode()) {
         if (!seen.has(walker.currentNode)) {
