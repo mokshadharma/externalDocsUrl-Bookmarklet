@@ -1,4 +1,6 @@
 javascript:(function () {
+  'use strict';
+
   /* Bookmarklet: Resolve externalDocsUrl links
    *
    * On GitHub code view pages, replaces occurrences of
