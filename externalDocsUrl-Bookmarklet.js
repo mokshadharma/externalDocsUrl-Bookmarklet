@@ -139,8 +139,8 @@ javascript:(function () {
   /**
    * Replace placeholder text in a single DOM text node with clickable links.
    *
-   * Skips the node if it has been detached from the DOM or is already
-   * wrapped in an <a> element. Delegates to buildFragmentFromMatches
+   * Skips the node if it has been detached from the DOM or is inside
+   * an <a> element (at any nesting depth). Delegates to buildFragmentFromMatches
    * to split the text and produce a DocumentFragment of interleaved
    * text nodes and link elements, then swaps the original text node
    * for the fragment.
@@ -150,8 +150,7 @@ javascript:(function () {
    */
   function replaceTextNodeWithDocsLinks(node, docsBaseUrl) {
     try {
-      if (!node.parentNode) { return; }
-      if (node.parentNode.tagName === 'A') { return; }
+      if (!node.parentNode || node.parentElement?.closest('a')) return;
       const fragment = buildFragmentFromMatches(node.nodeValue, docsBaseUrl);
       if (!fragment) return;
       node.parentNode.replaceChild(fragment, node);
