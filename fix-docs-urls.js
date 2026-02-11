@@ -1,4 +1,13 @@
 javascript:(function(){
+  /* Bookmarklet: Resolve externalDocsUrl links
+   *
+   * On GitHub code view pages, replaces occurrences of
+   * ${externalDocsUrl}/[path] with clickable links pointing to
+   * https://docs.github.com/en/enterprise-cloud@latest/[path]
+   *
+   * Links open in a new tab and do not trigger GitHub's
+   * underlying code view click handlers.
+   */
   var base='https://docs.github.com/en/enterprise-cloud@latest/';
   var re=/^\$\{externalDocsUrl\}\/(.+)$/;
   var walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null,false);
