@@ -82,8 +82,8 @@ javascript:(function () {
    * Build a DocumentFragment by splitting text on placeholder matches
    * and interleaving plain text segments with clickable documentation links.
    *
-   * Iterates over every ${externalDocsUrl}/[path] match in the given text:
-   *   1. Appends any plain text before the match as a text node.
+   * Uses matchAll for stateless iteration over all occurrences:
+   *   1. Appends any plain text before the match.
    *   2. Sanitizes the captured path: decodes first to normalize any
    *      pre-encoded characters (e.g. %20), then re-encodes via encodeURI
    *      to produce a clean URL without double-encoding. Falls back to the
@@ -91,8 +91,8 @@ javascript:(function () {
    *   3. Constructs the full docs URL and appends a clickable link element.
    *   4. Appends any trailing text after the last match.
    *
-   * Returns null if no matches were found (lastIndex never advanced),
-   * signalling to the caller that no replacement is needed.
+   * Returns null if no matches were found, signalling to the caller
+   * that no replacement is needed.
    *
    * Regex breakdown:
    *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
@@ -114,11 +114,13 @@ javascript:(function () {
    * not part of the URL path.
    */
   function buildFragmentFromMatches(text, docsBaseUrl) {
-    const placeholderPattern = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
+    const matches = [...text.matchAll(/\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g)];
+    if (matches.length === 0) return null;
+
     const fragment = document.createDocumentFragment();
     let lastIndex = 0;
-    let match;
-    while ((match = placeholderPattern.exec(text)) !== null) {
+
+    for (const match of matches) {
       if (match.index > lastIndex) {
         fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
       }
@@ -131,9 +133,9 @@ javascript:(function () {
       try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
       const url = docsBaseUrl + safePath;
       fragment.appendChild(createDocsLink(url));
-      lastIndex = placeholderPattern.lastIndex;
+      lastIndex = match.index + match[0].length;
     }
-    if (lastIndex === 0) return null;
+
     if (lastIndex < text.length) {
       fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
     }
