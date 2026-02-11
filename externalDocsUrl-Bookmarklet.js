@@ -11,7 +11,7 @@ javascript:(function () {
   try {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
-    var base = 'https://docs.github.com/en/enterprise-cloud@latest/';
+    var docsBaseUrl = 'https://docs.github.com/en/enterprise-cloud@latest/';
     /*
      * Regex breakdown:
      *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
@@ -32,7 +32,7 @@ javascript:(function () {
      * (such as closing quotes, parentheses, or whitespace) that is
      * not part of the URL path.
      */
-    var re = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
+    var placeholderPattern = /\$\{externalDocsUrl\}\/([\./#?&=%+~-]+)/g;
     /* find all code containers, or fall back to body */
     var scopes = document.querySelectorAll('.blob-wrapper, .highlight, table.highlight, .react-code-lines, .react-blob-print-hide');
     if (!scopes.length) { scopes = [document.body]; }
@@ -40,9 +40,9 @@ javascript:(function () {
     scopes.forEach(function (scope) {
       var walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null, false);
       while (walker.nextNode()) {
-        var t = walker.currentNode.nodeValue;
-        re.lastIndex = 0;
-        if (t && re.test(t)) {
+        var nodeText = walker.currentNode.nodeValue;
+        placeholderPattern.lastIndex = 0;
+        if (nodeText && placeholderPattern.test(nodeText)) {
           nodes.push(walker.currentNode);
         }
       }
@@ -51,35 +51,35 @@ javascript:(function () {
       try {
         if (node.parentNode && node.parentNode.tagName === 'A') { return; }
         var text = node.nodeValue;
-        var frag = document.createDocumentFragment();
+        var fragment = document.createDocumentFragment();
         var lastIndex = 0;
-        var m;
-        re.lastIndex = 0;
-        while ((m = re.exec(text)) !== null) {
-          if (m.index > lastIndex) {
-            frag.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+        var match;
+        placeholderPattern.lastIndex = 0;
+        while ((match = placeholderPattern.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
           }
-          var path = m[1];
-          var url = base + encodeURI(decodeURI(path));
-          var a = document.createElement('a');
-          a.href = url;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.textContent = url;
-          a.style.cssText = 'color: #1f6feb; text-decoration: underline; cursor: pointer;';
-          a.addEventListener('click', function (u) { return function (e) {
+          var path = match[1];
+          var url = docsBaseUrl + encodeURI(decodeURI(path));
+          var link = document.createElement('a');
+          link.href = url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = url;
+          link.style.cssText = 'color: #1f6feb; text-decoration: underline; cursor: pointer;';
+          link.addEventListener('click', function (u) { return function (e) {
             e.stopPropagation();
             e.preventDefault();
             window.open(u, '_blank', 'noopener');
           }; }(url), true);
-          frag.appendChild(a);
-          lastIndex = re.lastIndex;
+          fragment.appendChild(link);
+          lastIndex = placeholderPattern.lastIndex;
         }
         if (lastIndex === 0) return;
         if (lastIndex < text.length) {
-          frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+          fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
         }
-        node.parentNode.replaceChild(frag, node);
+        node.parentNode.replaceChild(fragment, node);
       } catch (nodeErr) {
         console.warn('externalDocsUrl bookmarklet: skipping node:', nodeErr);
       }
