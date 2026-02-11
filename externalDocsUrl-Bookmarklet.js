@@ -89,12 +89,31 @@ javascript:(function () {
    *
    * Returns null if no matches were found (lastIndex never advanced),
    * signalling to the caller that no replacement is needed.
+   *
+   * Regex breakdown:
+   *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
+   *   \/                     — literal / separator after the placeholder
+   *   (                      — start capture group: the docs path
+   *     [\w./#?&=%+~-]+      — one or more valid URL path characters:
+   *                            \w = word chars (a-z, A-Z, 0-9, _)
+   *                            .  = dot         /  = slash
+   *                            #  = fragment     ?  = query
+   *                            &  = ampersand    =  = equals
+   *                            %  = percent-enc  +  = plus
+   *                            ~  = tilde        -  = hyphen
+   *   )                      — end capture group
+   *   /g                     — global flag: match all occurrences
+   *
+   * The character class limits the match to standard URL characters,
+   * preventing the regex from greedily consuming surrounding text
+   * (such as closing quotes, parentheses, or whitespace) that is
+   * not part of the URL path.
    */
-  function buildFragmentFromMatches(text, docsBaseUrl, placeholderPattern) {
+  function buildFragmentFromMatches(text, docsBaseUrl) {
+    const placeholderPattern = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
     const fragment = document.createDocumentFragment();
     let lastIndex = 0;
     let match;
-    placeholderPattern.lastIndex = 0;
     while ((match = placeholderPattern.exec(text)) !== null) {
       if (match.index > lastIndex) {
         fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
@@ -129,11 +148,11 @@ javascript:(function () {
    * Any error on an individual node is caught and logged so that
    * remaining nodes can still be processed.
    */
-  function replaceTextNodeWithDocsLinks(node, docsBaseUrl, placeholderPattern) {
+  function replaceTextNodeWithDocsLinks(node, docsBaseUrl) {
     try {
       if (!node.parentNode) { return; }
       if (node.parentNode.tagName === 'A') { return; }
-      const fragment = buildFragmentFromMatches(node.nodeValue, docsBaseUrl, placeholderPattern);
+      const fragment = buildFragmentFromMatches(node.nodeValue, docsBaseUrl);
       if (!fragment) return;
       node.parentNode.replaceChild(fragment, node);
     } catch (nodeErr) {
@@ -145,33 +164,12 @@ javascript:(function () {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
     const docsBaseUrl = 'https://docs.github.com/en/enterprise-cloud@latest/';
-    /*
-     * Regex breakdown:
-     *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
-     *   \/                     — literal / separator after the placeholder
-     *   (                      — start capture group: the docs path
-     *     [\w./#?&=%+~-]+      — one or more valid URL path characters:
-     *                            \w = word chars (a-z, A-Z, 0-9, _)
-     *                            .  = dot         /  = slash
-     *                            #  = fragment     ?  = query
-     *                            &  = ampersand    =  = equals
-     *                            %  = percent-enc  +  = plus
-     *                            ~  = tilde        -  = hyphen
-     *   )                      — end capture group
-     *   /g                     — global flag: match all occurrences
-     *
-     * The character class limits the match to standard URL characters,
-     * preventing the regex from greedily consuming surrounding text
-     * (such as closing quotes, parentheses, or whitespace) that is
-     * not part of the URL path.
-     */
-    const placeholderPattern = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
 
     const scopes = findCodeContainers();
     const nodes = collectMatchingNodes(scopes);
 
     nodes.forEach(function (node) {
-      replaceTextNodeWithDocsLinks(node, docsBaseUrl, placeholderPattern);
+      replaceTextNodeWithDocsLinks(node, docsBaseUrl);
     });
   } catch (err) {
     console.error('externalDocsUrl bookmarklet error:', err);
