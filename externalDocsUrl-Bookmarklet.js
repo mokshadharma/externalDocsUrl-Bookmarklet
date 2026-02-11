@@ -83,13 +83,13 @@ javascript:(function () {
    */
   function collectMatchingNodes(scopes) {
     const nodes = [];
-    // Guard against processing a node twice when code view selectors
-    // produce overlapping containers (e.g. .highlight inside .blob-wrapper).
+    /* Guard against processing a node twice when code view selectors
+       produce overlapping containers (e.g. .highlight inside .blob-wrapper). */
     const seen = new Set();
     for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
         acceptNode: (node) =>
-          // REJECT and SKIP are equivalent for text nodes (they are leaves)
+          /* REJECT and SKIP are equivalent for text nodes (they are leaves) */
           NON_RENDERED_TAGS.has(node.parentElement?.tagName)
             ? NodeFilter.FILTER_REJECT
             : node.parentElement?.closest('a')
