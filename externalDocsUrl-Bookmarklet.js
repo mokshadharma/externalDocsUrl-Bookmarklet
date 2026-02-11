@@ -200,17 +200,21 @@ javascript:(function () {
    * a DocumentFragment of interleaved text nodes and link elements,
    * then swaps the original text node for the fragment.
    *
+   * Returns true if a replacement was made, false otherwise.
+   *
    * Any error on an individual node is caught and logged so that
    * remaining nodes can still be processed.
    */
   function replaceTextNodeWithDocsLinks(node) {
     try {
-      if (!node.parentNode) return;
+      if (!node.parentNode) return false;
       const fragment = buildFragmentFromMatches(node.nodeValue);
-      if (!fragment) return;
+      if (!fragment) return false;
       node.parentNode.replaceChild(fragment, node);
+      return true;
     } catch (nodeErr) {
       console.warn('externalDocsUrl bookmarklet: skipping node:', nodeErr);
+      return false;
     }
   }
 
@@ -224,11 +228,12 @@ javascript:(function () {
     window.__externalDocsUrlBookmarkletRan = location.href;
 
     const nodes = collectMatchingNodes(findCodeContainers());
+    let replaced = 0;
     for (const node of nodes) {
-      replaceTextNodeWithDocsLinks(node);
+      if (replaceTextNodeWithDocsLinks(node)) replaced++;
     }
     console.log(
-      'externalDocsUrl bookmarklet: replaced ' + nodes.length + ' occurrence(s) on\n' +
+      'externalDocsUrl bookmarklet: replaced ' + replaced + ' occurrence(s) on\n' +
       '  ' + location.href
     );
   }
