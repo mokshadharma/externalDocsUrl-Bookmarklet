@@ -39,14 +39,14 @@ javascript:(function () {
   function collectMatchingNodes(scopes) {
     const PLACEHOLDER = '${externalDocsUrl}';
     const nodes = [];
-    scopes.forEach(function (scope) {
+    for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
       while (walker.nextNode()) {
         if (walker.currentNode.nodeValue.includes(PLACEHOLDER)) {
           nodes.push(walker.currentNode);
         }
       }
-    });
+    }
     return nodes;
   }
 
@@ -66,7 +66,7 @@ javascript:(function () {
     link.rel = 'noopener noreferrer';
     link.textContent = url;
     link.style.cssText = 'color: #1f6feb; text-decoration: underline; cursor: pointer;';
-    link.addEventListener('click', function (e) {
+    link.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
       window.open(url, '_blank', 'noopener');
@@ -168,9 +168,9 @@ javascript:(function () {
     const scopes = findCodeContainers();
     const nodes = collectMatchingNodes(scopes);
 
-    nodes.forEach(function (node) {
+    for (const node of nodes) {
       replaceTextNodeWithDocsLinks(node, docsBaseUrl);
-    });
+    }
   } catch (err) {
     console.error('externalDocsUrl bookmarklet error:', err);
   }
