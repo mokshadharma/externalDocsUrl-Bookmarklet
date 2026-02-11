@@ -20,13 +20,14 @@ javascript:(function () {
    *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
    *   \/                     — literal / separator after the placeholder
    *   (                      — start capture group: the docs path
-   *     [\w./#?&=%+~-]+      — one or more valid URL path characters:
+   *     [\w./#?&=%+~:,-]+    — one or more valid URL path characters:
    *                            \w = word chars (a-z, A-Z, 0-9, _)
    *                            .  = dot         /  = slash
    *                            #  = fragment     ?  = query
    *                            &  = ampersand    =  = equals
    *                            %  = percent-enc  +  = plus
-   *                            ~  = tilde        -  = hyphen
+   *                            ~  = tilde        :  = colon
+   *                            ,  = comma        -  = hyphen
    *   )                      — end capture group
    *   /g                     — global flag: match all occurrences
    *
@@ -35,7 +36,7 @@ javascript:(function () {
    * (such as closing quotes, parentheses, or whitespace) that is
    * not part of the URL path.
    */
-  const PLACEHOLDER_PATTERN = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
+  const PLACEHOLDER_PATTERN = /\$\{externalDocsUrl\}\/([\w./#?&=%+~:,-]+)/g;
 
   /**
    * Target GitHub code view containers:
