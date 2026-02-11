@@ -9,6 +9,32 @@ javascript:(function () {
    * underlying code view click handlers.
    */
 
+  const DOCS_BASE_URL = 'https://docs.github.com/en/enterprise-cloud@latest/';
+  const PLACEHOLDER = '${externalDocsUrl}';
+
+  /**
+   * Regex to match ${externalDocsUrl}/[path] and capture the path.
+   *
+   *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
+   *   \/                     — literal / separator after the placeholder
+   *   (                      — start capture group: the docs path
+   *     [\w./#?&=%+~-]+      — one or more valid URL path characters:
+   *                            \w = word chars (a-z, A-Z, 0-9, _)
+   *                            .  = dot         /  = slash
+   *                            #  = fragment     ?  = query
+   *                            &  = ampersand    =  = equals
+   *                            %  = percent-enc  +  = plus
+   *                            ~  = tilde        -  = hyphen
+   *   )                      — end capture group
+   *   /g                     — global flag: match all occurrences
+   *
+   * The character class limits the match to standard URL characters,
+   * preventing the regex from greedily consuming surrounding text
+   * (such as closing quotes, parentheses, or whitespace) that is
+   * not part of the URL path.
+   */
+  const PLACEHOLDER_PATTERN = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
+
   /**
    * Find the GitHub code view containers to search within.
    *
@@ -38,7 +64,6 @@ javascript:(function () {
    * buildFragmentFromMatches returning null.
    */
   function collectMatchingNodes(scopes) {
-    const PLACEHOLDER = '${externalDocsUrl}';
     const nodes = [];
     for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
@@ -93,28 +118,9 @@ javascript:(function () {
    *
    * Returns null if no matches were found, signalling to the caller
    * that no replacement is needed.
-   *
-   * Regex breakdown:
-   *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
-   *   \/                     — literal / separator after the placeholder
-   *   (                      — start capture group: the docs path
-   *     [\w./#?&=%+~-]+      — one or more valid URL path characters:
-   *                            \w = word chars (a-z, A-Z, 0-9, _)
-   *                            .  = dot         /  = slash
-   *                            #  = fragment     ?  = query
-   *                            &  = ampersand    =  = equals
-   *                            %  = percent-enc  +  = plus
-   *                            ~  = tilde        -  = hyphen
-   *   )                      — end capture group
-   *   /g                     — global flag: match all occurrences
-   *
-   * The character class limits the match to standard URL characters,
-   * preventing the regex from greedily consuming surrounding text
-   * (such as closing quotes, parentheses, or whitespace) that is
-   * not part of the URL path.
    */
-  function buildFragmentFromMatches(text, docsBaseUrl) {
-    const matches = [...text.matchAll(/\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g)];
+  function buildFragmentFromMatches(text) {
+    const matches = [...text.matchAll(PLACEHOLDER_PATTERN)];
     if (matches.length === 0) return null;
 
     const fragment = document.createDocumentFragment();
@@ -131,7 +137,7 @@ javascript:(function () {
          decodeURI throws a URIError; fall back to the raw path. */
       let safePath;
       try { safePath = encodeURI(decodeURI(path)); } catch { safePath = path; }
-      const url = docsBaseUrl + safePath;
+      const url = DOCS_BASE_URL + safePath;
       fragment.appendChild(createDocsLink(url));
       lastIndex = match.index + match[0].length;
     }
@@ -154,10 +160,10 @@ javascript:(function () {
    * Any error on an individual node is caught and logged so that
    * remaining nodes can still be processed.
    */
-  function replaceTextNodeWithDocsLinks(node, docsBaseUrl) {
+  function replaceTextNodeWithDocsLinks(node) {
     try {
       if (!node.parentNode || node.parentElement?.closest('a')) return;
-      const fragment = buildFragmentFromMatches(node.nodeValue, docsBaseUrl);
+      const fragment = buildFragmentFromMatches(node.nodeValue);
       if (!fragment) return;
       node.parentNode.replaceChild(fragment, node);
     } catch (nodeErr) {
@@ -173,13 +179,10 @@ javascript:(function () {
   function resolveExternalDocsUrls() {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
-    const docsBaseUrl = 'https://docs.github.com/en/enterprise-cloud@latest/';
 
-    const scopes = findCodeContainers();
-    const nodes = collectMatchingNodes(scopes);
-
+    const nodes = collectMatchingNodes(findCodeContainers());
     for (const node of nodes) {
-      replaceTextNodeWithDocsLinks(node, docsBaseUrl);
+      replaceTextNodeWithDocsLinks(node);
     }
   }
 
