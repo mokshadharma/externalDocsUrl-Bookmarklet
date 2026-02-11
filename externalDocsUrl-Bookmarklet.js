@@ -34,7 +34,7 @@ javascript:(function () {
   function collectMatchingNodes(scopes, pattern) {
     const nodes = [];
     scopes.forEach(function (scope) {
-      const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null, false);
+      const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
       while (walker.nextNode()) {
         const nodeText = walker.currentNode.nodeValue;
         pattern.lastIndex = 0;
