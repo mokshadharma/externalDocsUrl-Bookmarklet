@@ -77,6 +77,11 @@ javascript:(function () {
           link.rel = 'noopener noreferrer';
           link.textContent = url;
           link.style.cssText = 'color: #1f6feb; text-decoration: underline; cursor: pointer;';
+          /* GitHub's code view attaches click handlers to code containers
+             (for line selection, blame, etc.) that would intercept normal
+             link clicks. stopPropagation prevents those handlers from firing,
+             and the explicit window.open ensures reliable new-tab navigation
+             regardless of GitHub's SPA router. */
           link.addEventListener('click', function (u) { return function (e) {
             e.stopPropagation();
             e.preventDefault();
