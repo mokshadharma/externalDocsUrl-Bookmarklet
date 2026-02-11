@@ -71,17 +71,56 @@ javascript:(function () {
   }
 
   /**
+   * Build a DocumentFragment by splitting text on placeholder matches
+   * and interleaving plain text segments with clickable documentation links.
+   *
+   * Iterates over every ${externalDocsUrl}/[path] match in the given text:
+   *   1. Appends any plain text before the match as a text node.
+   *   2. Sanitizes the captured path: decodes first to normalize any
+   *      pre-encoded characters (e.g. %20), then re-encodes via encodeURI
+   *      to produce a clean URL without double-encoding. Falls back to the
+   *      raw path if decodeURI throws (e.g. malformed %GG sequences).
+   *   3. Constructs the full docs URL and appends a clickable link element.
+   *   4. Appends any trailing text after the last match.
+   *
+   * Returns null if no matches were found (lastIndex never advanced),
+   * signalling to the caller that no replacement is needed.
+   */
+  function buildFragmentFromMatches(text, docsBaseUrl, placeholderPattern) {
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let match;
+    placeholderPattern.lastIndex = 0;
+    while ((match = placeholderPattern.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      const path = match[1];
+      /* decodeURI normalizes any pre-encoded characters (e.g. %20)
+         so that encodeURI can re-encode cleanly without double-encoding.
+         If the path contains malformed percent-encoding (e.g. %GG),
+         decodeURI throws a URIError; fall back to the raw path. */
+      var safePath;
+      try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
+      const url = docsBaseUrl + safePath;
+      fragment.appendChild(createDocsLink(url));
+      lastIndex = placeholderPattern.lastIndex;
+    }
+    if (lastIndex === 0) return null;
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+    return fragment;
+  }
+
+  /**
    * Replace placeholder text in a single DOM text node with clickable links.
    *
-   * For each ${externalDocsUrl}/[path] occurrence found in the node's text:
-   *   1. Skips the node if it has been detached or is already inside an <a>.
-   *   2. Splits the text around each match, preserving non-matching segments
-   *      as plain text nodes.
-   *   3. Sanitizes the captured path (decode then re-encode) to avoid
-   *      double-encoding, with a fallback for malformed percent-sequences.
-   *   4. Builds a clickable link via createDocsLink and appends it to a
-   *      DocumentFragment.
-   *   5. Replaces the original text node with the assembled fragment.
+   * Skips the node if it has been detached from the DOM or is already
+   * wrapped in an <a> element. Delegates to buildFragmentFromMatches
+   * to split the text and produce a DocumentFragment of interleaved
+   * text nodes and link elements, then swaps the original text node
+   * for the fragment.
    *
    * Any error on an individual node is caught and logged so that
    * remaining nodes can still be processed.
@@ -90,30 +129,8 @@ javascript:(function () {
     try {
       if (!node.parentNode) { return; }
       if (node.parentNode.tagName === 'A') { return; }
-      const text = node.nodeValue;
-      const fragment = document.createDocumentFragment();
-      let lastIndex = 0;
-      let match;
-      placeholderPattern.lastIndex = 0;
-      while ((match = placeholderPattern.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-          fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-        }
-        const path = match[1];
-        /* decodeURI normalizes any pre-encoded characters (e.g. %20)
-           so that encodeURI can re-encode cleanly without double-encoding.
-           If the path contains malformed percent-encoding (e.g. %GG),
-           decodeURI throws a URIError; fall back to the raw path. */
-        var safePath;
-        try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
-        const url = docsBaseUrl + safePath;
-        fragment.appendChild(createDocsLink(url));
-        lastIndex = placeholderPattern.lastIndex;
-      }
-      if (lastIndex === 0) return;
-      if (lastIndex < text.length) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-      }
+      const fragment = buildFragmentFromMatches(node.nodeValue, docsBaseUrl, placeholderPattern);
+      if (!fragment) return;
       node.parentNode.replaceChild(fragment, node);
     } catch (nodeErr) {
       console.warn('externalDocsUrl bookmarklet: skipping node:', nodeErr);
