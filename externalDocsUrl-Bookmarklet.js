@@ -144,13 +144,12 @@ javascript:(function () {
    * that no replacement is needed.
    */
   function buildFragmentFromMatches(text) {
-    const matches = [...text.matchAll(PLACEHOLDER_PATTERN)];
-    if (matches.length === 0) return null;
-
     const fragment = document.createDocumentFragment();
     let lastIndex = 0;
+    let matched = false;
 
-    for (const match of matches) {
+    for (const match of text.matchAll(PLACEHOLDER_PATTERN)) {
+      matched = true;
       if (match.index > lastIndex) {
         fragment.append(text.slice(lastIndex, match.index));
       }
@@ -169,6 +168,8 @@ javascript:(function () {
       }
       lastIndex = match.index + match[0].length;
     }
+
+    if (!matched) return null;
 
     if (lastIndex < text.length) {
       fragment.append(text.slice(lastIndex));
