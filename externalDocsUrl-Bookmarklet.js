@@ -31,20 +31,24 @@ javascript:(function () {
    * Walk the DOM within the given scopes and collect all text nodes
    * whose content contains the ${externalDocsUrl} placeholder.
    *
-   * Uses a simple substring check (includes) rather than the full
-   * regex as a cheap pre-filter. Any false positives (e.g. the
-   * placeholder without a valid trailing path) are harmlessly
-   * handled downstream by buildFragmentFromMatches returning null.
+   * The NodeFilter callback serves as a cheap pre-filter using a
+   * simple substring check (includes) rather than the full regex.
+   * Any false positives (e.g. the placeholder without a valid
+   * trailing path) are harmlessly handled downstream by
+   * buildFragmentFromMatches returning null.
    */
   function collectMatchingNodes(scopes) {
     const PLACEHOLDER = '${externalDocsUrl}';
     const nodes = [];
     for (const scope of scopes) {
-      const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
+      const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) =>
+          node.nodeValue.includes(PLACEHOLDER)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_SKIP,
+      });
       while (walker.nextNode()) {
-        if (walker.currentNode.nodeValue.includes(PLACEHOLDER)) {
-          nodes.push(walker.currentNode);
-        }
+        nodes.push(walker.currentNode);
       }
     }
     return nodes;
