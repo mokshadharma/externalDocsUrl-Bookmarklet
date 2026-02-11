@@ -51,5 +51,5 @@ https://docs.github.com/en/enterprise-cloud@latest/rest/actions/workflow-runs#fo
 If the bookmarklet doesn't appear to do anything:
 
 - **Refresh the page** and try again. The double-run guard prevents it from running twice on the same URL, but a page reload clears the guard.
-- **Open the browser console** (F12 → Console) and look for any error messages prefixed with `externalDocsUrl bookmarklet error:`.
+- **Open the browser console** (F12 → Console) and check the log. The bookmarklet logs the number of replacements made and the page URL after each run. Look for any error or warning messages prefixed with `externalDocsUrl bookmarklet`.
 - Confirm the page contains raw `${externalDocsUrl}/...` text and not already-rendered links.

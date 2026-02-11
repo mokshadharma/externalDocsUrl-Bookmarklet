@@ -213,6 +213,10 @@ javascript:(function () {
     for (const node of nodes) {
       replaceTextNodeWithDocsLinks(node);
     }
+    console.log(
+      'externalDocsUrl bookmarklet: replaced ' + nodes.length + ' occurrence(s) on\n' +
+      '  ' + location.href
+    );
   }
 
   try {
