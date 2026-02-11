@@ -83,6 +83,8 @@ javascript:(function () {
    */
   function collectMatchingNodes(scopes) {
     const nodes = [];
+    // Guard against processing a node twice when code view selectors
+    // produce overlapping containers (e.g. .highlight inside .blob-wrapper).
     const seen = new Set();
     for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
