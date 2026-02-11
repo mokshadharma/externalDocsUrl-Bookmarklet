@@ -11,7 +11,7 @@ javascript:(function () {
   try {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
-    var docsBaseUrl = 'https://docs.github.com/en/enterprise-cloud@latest/';
+    const docsBaseUrl = 'https://docs.github.com/en/enterprise-cloud@latest/';
     /*
      * Regex breakdown:
      *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
@@ -32,7 +32,7 @@ javascript:(function () {
      * (such as closing quotes, parentheses, or whitespace) that is
      * not part of the URL path.
      */
-    var placeholderPattern = /\$\{externalDocsUrl\}\/([\./#?&=%+~-]+)/g;
+    const placeholderPattern = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
     /*
      * Target GitHub code view containers:
      *   .blob-wrapper         — classic file view code container
@@ -42,13 +42,13 @@ javascript:(function () {
      *   .react-blob-print-hide — React-based file view print layout
      * Falls back to document.body if none are found.
      */
-    var scopes = document.querySelectorAll('.blob-wrapper, .highlight, table.highlight, .react-code-lines, .react-blob-print-hide');
+    let scopes = document.querySelectorAll('.blob-wrapper, .highlight, table.highlight, .react-code-lines, .react-blob-print-hide');
     if (!scopes.length) { scopes = [document.body]; }
-    var nodes = [];
+    const nodes = [];
     scopes.forEach(function (scope) {
-      var walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null, false);
+      const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null, false);
       while (walker.nextNode()) {
-        var nodeText = walker.currentNode.nodeValue;
+        const nodeText = walker.currentNode.nodeValue;
         placeholderPattern.lastIndex = 0;
         if (nodeText && placeholderPattern.test(nodeText)) {
           nodes.push(walker.currentNode);
@@ -58,20 +58,20 @@ javascript:(function () {
     nodes.forEach(function (node) {
       try {
         if (node.parentNode && node.parentNode.tagName === 'A') { return; }
-        var text = node.nodeValue;
-        var fragment = document.createDocumentFragment();
-        var lastIndex = 0;
-        var match;
+        const text = node.nodeValue;
+        const fragment = document.createDocumentFragment();
+        let lastIndex = 0;
+        let match;
         placeholderPattern.lastIndex = 0;
         while ((match = placeholderPattern.exec(text)) !== null) {
           if (match.index > lastIndex) {
             fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
           }
-          var path = match[1];
+          const path = match[1];
           /* decodeURI normalizes any pre-encoded characters (e.g. %20)
              so that encodeURI can re-encode cleanly without double-encoding */
-          var url = docsBaseUrl + encodeURI(decodeURI(path));
-          var link = document.createElement('a');
+          const url = docsBaseUrl + encodeURI(decodeURI(path));
+          const link = document.createElement('a');
           link.href = url;
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
