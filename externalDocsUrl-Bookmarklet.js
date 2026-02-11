@@ -160,7 +160,12 @@ javascript:(function () {
     }
   }
 
-  try {
+  /**
+   * Main entry point: guard against duplicate runs, then find and
+   * replace all ${externalDocsUrl}/[path] placeholders with clickable
+   * documentation links.
+   */
+  function resolveExternalDocsUrls() {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
     const docsBaseUrl = 'https://docs.github.com/en/enterprise-cloud@latest/';
@@ -171,6 +176,10 @@ javascript:(function () {
     for (const node of nodes) {
       replaceTextNodeWithDocsLinks(node, docsBaseUrl);
     }
+  }
+
+  try {
+    resolveExternalDocsUrls();
   } catch (err) {
     console.error('externalDocsUrl bookmarklet error:', err);
   }
