@@ -19,6 +19,9 @@ https://docs.github.com/en/enterprise-cloud@latest/rest/actions/workflow-runs#fo
 - Links open in a new tab.
 - Clicking a link does not trigger GitHub's underlying code view handlers.
 - Multiple occurrences on a single page are all replaced.
+- A double-run guard prevents duplicate replacements if clicked more than once.
+- Path characters are validated and sanitized before constructing URLs.
+- Errors are logged to the browser console rather than failing silently.
 
 ## Installation
 
@@ -42,3 +45,11 @@ https://docs.github.com/en/enterprise-cloud@latest/rest/actions/workflow-runs#fo
 6. Navigate to a GitHub code view page containing `${externalDocsUrl}` references and click the bookmark
 
 > **Note:** Firefox may strip the `javascript:` prefix when pasting into the Location field. If the bookmarklet doesn't work after saving, edit the bookmark and confirm the URL begins with `javascript:`.
+
+## Troubleshooting
+
+If the bookmarklet doesn't appear to do anything:
+
+- **Refresh the page** and try again. The double-run guard prevents it from running twice on the same page load.
+- **Open the browser console** (F12 → Console) and look for any error messages prefixed with `externalDocsUrl bookmarklet error:`.
+- Confirm the page contains raw `${externalDocsUrl}/...` text and not already-rendered links.
