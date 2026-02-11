@@ -133,8 +133,9 @@ javascript:(function () {
    * Uses matchAll for stateless iteration over all occurrences:
    *   1. Appends any plain text before the match.
    *   2. Sanitizes the captured path and constructs the full docs URL.
-   *   3. Appends a clickable link element.
-   *   4. Appends any trailing text after the last match.
+   *   3. Validates the URL; if invalid, keeps the original text.
+   *   4. Appends a clickable link element for valid URLs.
+   *   5. Appends any trailing text after the last match.
    *
    * Returns null if no matches were found, signalling to the caller
    * that no replacement is needed.
@@ -151,7 +152,13 @@ javascript:(function () {
         fragment.append(text.slice(lastIndex, match.index));
       }
       const path = match[1];
-      fragment.appendChild(createDocsLink(DOCS_BASE_URL + sanitizePath(path)));
+      const url = DOCS_BASE_URL + sanitizePath(path);
+      try {
+        new URL(url);
+        fragment.appendChild(createDocsLink(url));
+      } catch {
+        fragment.append(match[0]);
+      }
       lastIndex = match.index + match[0].length;
     }
 
