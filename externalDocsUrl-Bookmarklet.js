@@ -123,7 +123,7 @@ javascript:(function () {
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.textContent = url;
-    link.style.cssText = 'color: #1f6feb; text-decoration: underline; cursor: pointer;';
+    link.style.cssText = 'color: var(--fgColor-accent, var(--color-accent-fg, #1f6feb)); text-decoration: underline; cursor: pointer;';
     link.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
