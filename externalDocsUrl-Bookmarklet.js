@@ -104,16 +104,27 @@ javascript:(function () {
   }
 
   /**
+   * Normalize a captured URL path: decode first to collapse any
+   * pre-encoded characters (e.g. %20), then re-encode via encodeURI
+   * to produce a clean URL without double-encoding. Falls back to
+   * the raw path if decodeURI throws (e.g. malformed %GG sequences).
+   */
+  function sanitizePath(raw) {
+    try {
+      return encodeURI(decodeURI(raw));
+    } catch {
+      return raw;
+    }
+  }
+
+  /**
    * Build a DocumentFragment by splitting text on placeholder matches
    * and interleaving plain text segments with clickable documentation links.
    *
    * Uses matchAll for stateless iteration over all occurrences:
    *   1. Appends any plain text before the match.
-   *   2. Sanitizes the captured path: decodes first to normalize any
-   *      pre-encoded characters (e.g. %20), then re-encodes via encodeURI
-   *      to produce a clean URL without double-encoding. Falls back to the
-   *      raw path if decodeURI throws (e.g. malformed %GG sequences).
-   *   3. Constructs the full docs URL and appends a clickable link element.
+   *   2. Sanitizes the captured path and constructs the full docs URL.
+   *   3. Appends a clickable link element.
    *   4. Appends any trailing text after the last match.
    *
    * Returns null if no matches were found, signalling to the caller
@@ -131,14 +142,7 @@ javascript:(function () {
         fragment.append(text.slice(lastIndex, match.index));
       }
       const path = match[1];
-      /* decodeURI normalizes any pre-encoded characters (e.g. %20)
-         so that encodeURI can re-encode cleanly without double-encoding.
-         If the path contains malformed percent-encoding (e.g. %GG),
-         decodeURI throws a URIError; fall back to the raw path. */
-      let safePath;
-      try { safePath = encodeURI(decodeURI(path)); } catch { safePath = path; }
-      const url = DOCS_BASE_URL + safePath;
-      fragment.appendChild(createDocsLink(url));
+      fragment.appendChild(createDocsLink(DOCS_BASE_URL + sanitizePath(path)));
       lastIndex = match.index + match[0].length;
     }
 
