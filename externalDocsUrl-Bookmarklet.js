@@ -89,6 +89,7 @@ javascript:(function () {
     for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
         acceptNode: (node) =>
+          // REJECT and SKIP are equivalent for text nodes (they are leaves)
           NON_RENDERED_TAGS.has(node.parentElement?.tagName)
             ? NodeFilter.FILTER_REJECT
             : node.parentElement?.closest('a')
