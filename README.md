@@ -19,7 +19,7 @@ https://docs.github.com/en/enterprise-cloud@latest/rest/actions/workflow-runs#fo
 - Links open in a new tab.
 - Clicking a link does not trigger GitHub's underlying code view handlers.
 - Multiple occurrences on a single page are all replaced.
-- A double-run guard prevents duplicate replacements if clicked more than once.
+- A double-run guard prevents duplicate replacements if clicked more than once on the same page. The bookmarklet automatically re-enables itself when you navigate to a different page (including via GitHub's SPA navigation).
 - Path characters are validated and sanitized before constructing URLs.
 - Errors are logged to the browser console rather than failing silently.
 
@@ -50,6 +50,6 @@ https://docs.github.com/en/enterprise-cloud@latest/rest/actions/workflow-runs#fo
 
 If the bookmarklet doesn't appear to do anything:
 
-- **Refresh the page** and try again. The double-run guard prevents it from running twice on the same page load.
+- **Refresh the page** and try again. The double-run guard prevents it from running twice on the same URL, but a page reload clears the guard.
 - **Open the browser console** (F12 → Console) and look for any error messages prefixed with `externalDocsUrl bookmarklet error:`.
 - Confirm the page contains raw `${externalDocsUrl}/...` text and not already-rendered links.

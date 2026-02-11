@@ -9,8 +9,8 @@ javascript:(function(){
    * underlying code view click handlers.
    */
   try{
-    if(window.__externalDocsUrlBookmarkletRan){return;}
-    window.__externalDocsUrlBookmarkletRan=true;
+    if(window.__externalDocsUrlBookmarkletRan===location.href){return;}
+    window.__externalDocsUrlBookmarkletRan=location.href;
     var base='https://docs.github.com/en/enterprise-cloud@latest/';
     var re=/^\$\{externalDocsUrl\}\/([\w\-\.\/\#\?\&\=\%\+\~]+)$/;
     /* find the common ancestor of all code cells, or fall back to body */
