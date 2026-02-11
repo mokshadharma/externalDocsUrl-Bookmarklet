@@ -70,6 +70,56 @@ javascript:(function () {
     return link;
   }
 
+  /**
+   * Replace placeholder text in a single DOM text node with clickable links.
+   *
+   * For each ${externalDocsUrl}/[path] occurrence found in the node's text:
+   *   1. Skips the node if it has been detached or is already inside an <a>.
+   *   2. Splits the text around each match, preserving non-matching segments
+   *      as plain text nodes.
+   *   3. Sanitizes the captured path (decode then re-encode) to avoid
+   *      double-encoding, with a fallback for malformed percent-sequences.
+   *   4. Builds a clickable link via createDocsLink and appends it to a
+   *      DocumentFragment.
+   *   5. Replaces the original text node with the assembled fragment.
+   *
+   * Any error on an individual node is caught and logged so that
+   * remaining nodes can still be processed.
+   */
+  function replaceTextNodeWithDocsLinks(node, docsBaseUrl, placeholderPattern) {
+    try {
+      if (!node.parentNode) { return; }
+      if (node.parentNode.tagName === 'A') { return; }
+      const text = node.nodeValue;
+      const fragment = document.createDocumentFragment();
+      let lastIndex = 0;
+      let match;
+      placeholderPattern.lastIndex = 0;
+      while ((match = placeholderPattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+        const path = match[1];
+        /* decodeURI normalizes any pre-encoded characters (e.g. %20)
+           so that encodeURI can re-encode cleanly without double-encoding.
+           If the path contains malformed percent-encoding (e.g. %GG),
+           decodeURI throws a URIError; fall back to the raw path. */
+        var safePath;
+        try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
+        const url = docsBaseUrl + safePath;
+        fragment.appendChild(createDocsLink(url));
+        lastIndex = placeholderPattern.lastIndex;
+      }
+      if (lastIndex === 0) return;
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+      node.parentNode.replaceChild(fragment, node);
+    } catch (nodeErr) {
+      console.warn('externalDocsUrl bookmarklet: skipping node:', nodeErr);
+    }
+  }
+
   try {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
@@ -100,37 +150,7 @@ javascript:(function () {
     const nodes = collectMatchingNodes(scopes, placeholderPattern);
 
     nodes.forEach(function (node) {
-      try {
-        if (!node.parentNode) { return; }
-        if (node.parentNode.tagName === 'A') { return; }
-        const text = node.nodeValue;
-        const fragment = document.createDocumentFragment();
-        let lastIndex = 0;
-        let match;
-        placeholderPattern.lastIndex = 0;
-        while ((match = placeholderPattern.exec(text)) !== null) {
-          if (match.index > lastIndex) {
-            fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-          }
-          const path = match[1];
-          /* decodeURI normalizes any pre-encoded characters (e.g. %20)
-             so that encodeURI can re-encode cleanly without double-encoding.
-             If the path contains malformed percent-encoding (e.g. %GG),
-             decodeURI throws a URIError; fall back to the raw path. */
-          var safePath;
-          try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
-          const url = docsBaseUrl + safePath;
-          fragment.appendChild(createDocsLink(url));
-          lastIndex = placeholderPattern.lastIndex;
-        }
-        if (lastIndex === 0) return;
-        if (lastIndex < text.length) {
-          fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-        }
-        node.parentNode.replaceChild(fragment, node);
-      } catch (nodeErr) {
-        console.warn('externalDocsUrl bookmarklet: skipping node:', nodeErr);
-      }
+      replaceTextNodeWithDocsLinks(node, docsBaseUrl, placeholderPattern);
     });
   } catch (err) {
     console.error('externalDocsUrl bookmarklet error:', err);
