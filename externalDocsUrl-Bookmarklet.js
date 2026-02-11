@@ -100,7 +100,7 @@ javascript:(function () {
          so that encodeURI can re-encode cleanly without double-encoding.
          If the path contains malformed percent-encoding (e.g. %GG),
          decodeURI throws a URIError; fall back to the raw path. */
-      var safePath;
+      let safePath;
       try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
       const url = docsBaseUrl + safePath;
       fragment.appendChild(createDocsLink(url));
