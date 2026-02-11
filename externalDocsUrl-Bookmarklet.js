@@ -27,23 +27,27 @@ javascript:(function(){
       }
     });
     nodes.forEach(function(node){
-      if(node.parentNode&&node.parentNode.tagName==='A'){return;}
-      var m=node.nodeValue.match(re);
-      if(!m)return;
-      var path=m[1];
-      var url=base+encodeURI(decodeURI(path));
-      var a=document.createElement('a');
-      a.href=url;
-      a.target='_blank';
-      a.rel='noopener noreferrer';
-      a.textContent=url;
-      a.style.cssText='color:#1f6feb;text-decoration:underline;cursor:pointer;';
-      a.addEventListener('click',function(e){
-        e.stopPropagation();
-        e.preventDefault();
-        window.open(url,'_blank','noopener');
-      },true);
-      node.parentNode.replaceChild(a,node);
+      try{
+        if(node.parentNode&&node.parentNode.tagName==='A'){return;}
+        var m=node.nodeValue.match(re);
+        if(!m)return;
+        var path=m[1];
+        var url=base+encodeURI(decodeURI(path));
+        var a=document.createElement('a');
+        a.href=url;
+        a.target='_blank';
+        a.rel='noopener noreferrer';
+        a.textContent=url;
+        a.style.cssText='color:#1f6feb;text-decoration:underline;cursor:pointer;';
+        a.addEventListener('click',function(e){
+          e.stopPropagation();
+          e.preventDefault();
+          window.open(url,'_blank','noopener');
+        },true);
+        node.parentNode.replaceChild(a,node);
+      }catch(nodeErr){
+        console.warn('externalDocsUrl bookmarklet: skipping node:',nodeErr);
+      }
     });
   }catch(err){
     console.error('externalDocsUrl bookmarklet error:',err);
