@@ -27,13 +27,13 @@ https://docs.github.com/en/enterprise-cloud@latest/rest/actions/workflow-runs#fo
 
 ### Chrome
 
-1. Open the **Bookmarks Manager** (`Ctrl+Shift+O` on Windows/Linux, `⌘+Shift+O` on macOS), or right-click the bookmarks bar and select **Add page…**
+1. **Option A – via the Bookmarks Manager:** Open the Bookmarks Manager (`Ctrl+Shift+O` on Windows/Linux, `⌘+Shift+O` on macOS), click the **⋮** (three-dot) menu in the top-right corner, and select **Add new bookmark**.
+
+   **Option B – via the bookmarks bar:** If your bookmarks bar is visible (toggle it with `Ctrl+Shift+B` on Windows/Linux or `⌘+Shift+B` on macOS), right-click the bar and select **Add page…**
 2. Set the **Name** to something like `Resolve externalDocsUrl`
 3. In the **URL** field, paste the entire bookmarklet code (the `javascript:(function(){ ... })();` string)
 4. Click **Save**
 5. Navigate to a GitHub code view page containing `${externalDocsUrl}` references and click the bookmark
-
-> **Tip:** If you don't see the bookmarks bar, press `Ctrl+Shift+B` (Windows/Linux) or `⌘+Shift+B` (macOS) to toggle it.
 
 ### Firefox
 
