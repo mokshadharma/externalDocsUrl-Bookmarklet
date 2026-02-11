@@ -40,15 +40,13 @@ javascript:(function () {
   /**
    * Target GitHub code view containers:
    *   .blob-wrapper          — classic file view code container
-   *   .highlight             — syntax-highlighted code block
-   *   table.highlight        — table-based syntax-highlighted code block
+   *   .highlight             — syntax-highlighted code block (including table-based)
    *   .react-code-lines      — React-based file view (newer GitHub UI)
    *   .react-blob-print-hide — React-based file view print layout
    */
   const CODE_VIEW_SELECTOR = [
     '.blob-wrapper',
     '.highlight',
-    'table.highlight',
     '.react-code-lines',
     '.react-blob-print-hide',
   ].join(', ');
