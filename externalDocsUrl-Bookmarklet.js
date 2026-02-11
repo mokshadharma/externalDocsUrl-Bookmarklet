@@ -62,11 +62,11 @@ javascript:(function () {
     link.rel = 'noopener noreferrer';
     link.textContent = url;
     link.style.cssText = 'color: #1f6feb; text-decoration: underline; cursor: pointer;';
-    link.addEventListener('click', function (u) { return function (e) {
+    link.addEventListener('click', function (e) {
       e.stopPropagation();
       e.preventDefault();
-      window.open(u, '_blank', 'noopener');
-    }; }(url), true);
+      window.open(url, '_blank', 'noopener');
+    }, true);
     return link;
   }
 
