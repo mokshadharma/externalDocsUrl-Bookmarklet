@@ -60,6 +60,8 @@ javascript:(function () {
             fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
           }
           var path = match[1];
+          /* decodeURI normalizes any pre-encoded characters (e.g. %20)
+             so that encodeURI can re-encode cleanly without double-encoding */
           var url = docsBaseUrl + encodeURI(decodeURI(path));
           var link = document.createElement('a');
           link.href = url;
