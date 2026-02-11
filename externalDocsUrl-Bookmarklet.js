@@ -73,6 +73,7 @@ javascript:(function () {
    */
   function collectMatchingNodes(scopes) {
     const nodes = [];
+    const seen = new Set();
     for (const scope of scopes) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
         acceptNode: (node) =>
@@ -81,7 +82,10 @@ javascript:(function () {
             : NodeFilter.FILTER_SKIP,
       });
       while (walker.nextNode()) {
-        nodes.push(walker.currentNode);
+        if (!seen.has(walker.currentNode)) {
+          seen.add(walker.currentNode);
+          nodes.push(walker.currentNode);
+        }
       }
     }
     return nodes;
