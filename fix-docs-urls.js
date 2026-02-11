@@ -9,7 +9,6 @@ javascript:(function(){
       nodes.push(walker.currentNode);
     }
   }
-  var count=0;
   nodes.forEach(function(node){
     var m=node.nodeValue.match(re);
     if(!m)return;
@@ -21,8 +20,11 @@ javascript:(function(){
     a.rel='noopener';
     a.textContent=url;
     a.style.cssText='color:#1f6feb;text-decoration:underline;cursor:pointer;';
+    a.addEventListener('click',function(e){
+      e.stopPropagation();
+      e.preventDefault();
+      window.open(url,'_blank','noopener');
+    },true);
     node.parentNode.replaceChild(a,node);
-    count++;
   });
-  alert('Bookmarklet done: '+count+' link(s) replaced.');
 })();
