@@ -101,7 +101,8 @@ javascript:(function () {
 
     nodes.forEach(function (node) {
       try {
-        if (node.parentNode && node.parentNode.tagName === 'A') { return; }
+        if (!node.parentNode) { return; }
+        if (node.parentNode.tagName === 'A') { return; }
         const text = node.nodeValue;
         const fragment = document.createDocumentFragment();
         let lastIndex = 0;
