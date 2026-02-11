@@ -36,20 +36,27 @@ javascript:(function () {
   const PLACEHOLDER_PATTERN = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
 
   /**
-   * Find the GitHub code view containers to search within.
-   *
    * Target GitHub code view containers:
-   *   .blob-wrapper         — classic file view code container
-   *   .highlight            — syntax-highlighted code block
-   *   table.highlight       — table-based syntax-highlighted code block
-   *   .react-code-lines     — React-based file view (newer GitHub UI)
+   *   .blob-wrapper          — classic file view code container
+   *   .highlight             — syntax-highlighted code block
+   *   table.highlight        — table-based syntax-highlighted code block
+   *   .react-code-lines      — React-based file view (newer GitHub UI)
    *   .react-blob-print-hide — React-based file view print layout
+   */
+  const CODE_VIEW_SELECTOR = [
+    '.blob-wrapper',
+    '.highlight',
+    'table.highlight',
+    '.react-code-lines',
+    '.react-blob-print-hide',
+  ].join(', ');
+
+  /**
+   * Find the GitHub code view containers to search within.
    * Falls back to document.body if none are found.
    */
   function findCodeContainers() {
-    const containers = document.querySelectorAll(
-      '.blob-wrapper, .highlight, table.highlight, .react-code-lines, .react-blob-print-hide'
-    );
+    const containers = document.querySelectorAll(CODE_VIEW_SELECTOR);
     return containers.length ? containers : [document.body];
   }
 
