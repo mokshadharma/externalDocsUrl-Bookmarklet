@@ -122,7 +122,7 @@ javascript:(function () {
 
     for (const match of matches) {
       if (match.index > lastIndex) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        fragment.append(text.slice(lastIndex, match.index));
       }
       const path = match[1];
       /* decodeURI normalizes any pre-encoded characters (e.g. %20)
@@ -137,7 +137,7 @@ javascript:(function () {
     }
 
     if (lastIndex < text.length) {
-      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+      fragment.append(text.slice(lastIndex));
     }
     return fragment;
   }
