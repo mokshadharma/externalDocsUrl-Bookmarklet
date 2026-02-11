@@ -13,17 +13,19 @@ javascript:(function(){
     window.__externalDocsUrlBookmarkletRan=location.href;
     var base='https://docs.github.com/en/enterprise-cloud@latest/';
     var re=/^\$\{externalDocsUrl\}\/([\w\-\.\/\#\?\&\=\%\+\~]+)$/;
-    /* find the common ancestor of all code cells, or fall back to body */
-    var scope=document.querySelector('.blob-wrapper,.highlight,table.highlight,.react-code-lines,.react-blob-print-hide');
-    if(!scope){scope=document.body;}
-    var walker=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT,null,false);
+    /* find all code containers, or fall back to body */
+    var scopes=document.querySelectorAll('.blob-wrapper,.highlight,table.highlight,.react-code-lines,.react-blob-print-hide');
+    if(!scopes.length){scopes=[document.body];}
     var nodes=[];
-    while(walker.nextNode()){
-      var t=walker.currentNode.nodeValue;
-      if(t&&re.test(t)){
-        nodes.push(walker.currentNode);
+    scopes.forEach(function(scope){
+      var walker=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT,null,false);
+      while(walker.nextNode()){
+        var t=walker.currentNode.nodeValue;
+        if(t&&re.test(t)){
+          nodes.push(walker.currentNode);
+        }
       }
-    }
+    });
     nodes.forEach(function(node){
       if(node.parentNode&&node.parentNode.tagName==='A'){return;}
       var m=node.nodeValue.match(re);
