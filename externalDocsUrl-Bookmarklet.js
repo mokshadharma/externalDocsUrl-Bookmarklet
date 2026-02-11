@@ -12,7 +12,7 @@ javascript:(function(){
     if(window.__externalDocsUrlBookmarkletRan===location.href){return;}
     window.__externalDocsUrlBookmarkletRan=location.href;
     var base='https://docs.github.com/en/enterprise-cloud@latest/';
-    var re=/^\$\{externalDocsUrl\}\/([\w\-\.\/\#\?\&\=\%\+\~]+)$/;
+    var re=/\$\{externalDocsUrl\}\/([\w\-\.\/\#\?\&\=\%\+\~]+)/g;
     /* find all code containers, or fall back to body */
     var scopes=document.querySelectorAll('.blob-wrapper,.highlight,table.highlight,.react-code-lines,.react-blob-print-hide');
     if(!scopes.length){scopes=[document.body];}
@@ -21,6 +21,7 @@ javascript:(function(){
       var walker=document.createTreeWalker(scope,NodeFilter.SHOW_TEXT,null,false);
       while(walker.nextNode()){
         var t=walker.currentNode.nodeValue;
+        re.lastIndex=0;
         if(t&&re.test(t)){
           nodes.push(walker.currentNode);
         }
@@ -29,22 +30,36 @@ javascript:(function(){
     nodes.forEach(function(node){
       try{
         if(node.parentNode&&node.parentNode.tagName==='A'){return;}
-        var m=node.nodeValue.match(re);
-        if(!m)return;
-        var path=m[1];
-        var url=base+encodeURI(decodeURI(path));
-        var a=document.createElement('a');
-        a.href=url;
-        a.target='_blank';
-        a.rel='noopener noreferrer';
-        a.textContent=url;
-        a.style.cssText='color:#1f6feb;text-decoration:underline;cursor:pointer;';
-        a.addEventListener('click',function(e){
-          e.stopPropagation();
-          e.preventDefault();
-          window.open(url,'_blank','noopener');
-        },true);
-        node.parentNode.replaceChild(a,node);
+        var text=node.nodeValue;
+        var frag=document.createDocumentFragment();
+        var lastIndex=0;
+        var m;
+        re.lastIndex=0;
+        while((m=re.exec(text))!==null){
+          if(m.index>lastIndex){
+            frag.appendChild(document.createTextNode(text.slice(lastIndex,m.index)));
+          }
+          var path=m[1];
+          var url=base+encodeURI(decodeURI(path));
+          var a=document.createElement('a');
+          a.href=url;
+          a.target='_blank';
+          a.rel='noopener noreferrer';
+          a.textContent=url;
+          a.style.cssText='color:#1f6feb;text-decoration:underline;cursor:pointer;';
+          a.addEventListener('click',function(u){return function(e){
+            e.stopPropagation();
+            e.preventDefault();
+            window.open(u,'_blank','noopener');
+          };}(url),true);
+          frag.appendChild(a);
+          lastIndex=re.lastIndex;
+        }
+        if(lastIndex===0)return;
+        if(lastIndex<text.length){
+          frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+        node.parentNode.replaceChild(frag,node);
       }catch(nodeErr){
         console.warn('externalDocsUrl bookmarklet: skipping node:',nodeErr);
       }
