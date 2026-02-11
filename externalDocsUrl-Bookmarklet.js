@@ -12,7 +12,27 @@ javascript:(function () {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
     var base = 'https://docs.github.com/en/enterprise-cloud@latest/';
-    var re = /\$\{externalDocsUrl\}\/([\w\-\.\/\#\?\&\=\%\+\~]+)/g;
+    /*
+     * Regex breakdown:
+     *   \$\{externalDocsUrl\}  — literal ${externalDocsUrl} placeholder
+     *   \/                     — literal / separator after the placeholder
+     *   (                      — start capture group: the docs path
+     *     [\w./#?&=%+~-]+      — one or more valid URL path characters:
+     *                            \w = word chars (a-z, A-Z, 0-9, _)
+     *                            .  = dot         /  = slash
+     *                            #  = fragment     ?  = query
+     *                            &  = ampersand    =  = equals
+     *                            %  = percent-enc  +  = plus
+     *                            ~  = tilde        -  = hyphen
+     *   )                      — end capture group
+     *   /g                     — global flag: match all occurrences
+     *
+     * The character class limits the match to standard URL characters,
+     * preventing the regex from greedily consuming surrounding text
+     * (such as closing quotes, parentheses, or whitespace) that is
+     * not part of the URL path.
+     */
+    var re = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
     /* find all code containers, or fall back to body */
     var scopes = document.querySelectorAll('.blob-wrapper, .highlight, table.highlight, .react-code-lines, .react-blob-print-hide');
     if (!scopes.length) { scopes = [document.body]; }
