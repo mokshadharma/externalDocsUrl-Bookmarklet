@@ -33,7 +33,15 @@ javascript:(function () {
      * not part of the URL path.
      */
     var placeholderPattern = /\$\{externalDocsUrl\}\/([\./#?&=%+~-]+)/g;
-    /* find all code containers, or fall back to body */
+    /*
+     * Target GitHub code view containers:
+     *   .blob-wrapper         — classic file view code container
+     *   .highlight            — syntax-highlighted code block
+     *   table.highlight       — table-based syntax-highlighted code block
+     *   .react-code-lines     — React-based file view (newer GitHub UI)
+     *   .react-blob-print-hide — React-based file view print layout
+     * Falls back to document.body if none are found.
+     */
     var scopes = document.querySelectorAll('.blob-wrapper, .highlight, table.highlight, .react-code-lines, .react-blob-print-hide');
     if (!scopes.length) { scopes = [document.body]; }
     var nodes = [];
