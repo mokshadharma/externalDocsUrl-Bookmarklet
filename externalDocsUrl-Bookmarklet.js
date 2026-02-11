@@ -157,6 +157,11 @@ javascript:(function () {
         new URL(url);
         fragment.appendChild(createDocsLink(url));
       } catch {
+        console.warn(
+          'externalDocsUrl bookmarklet: sanitization produced an invalid URL, skipping.\n' +
+          '  Original:  ' + JSON.stringify(match[0]) + '\n' +
+          '  Sanitized: ' + JSON.stringify(url)
+        );
         fragment.append(match[0]);
       }
       lastIndex = match.index + match[0].length;
