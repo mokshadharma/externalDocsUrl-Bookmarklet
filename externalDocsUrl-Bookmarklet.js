@@ -74,7 +74,8 @@ javascript:(function () {
    * whose content contains the ${externalDocsUrl} placeholder.
    *
    * The NodeFilter callback rejects text inside non-rendered elements
-   * (script, style, template, noscript), then applies a cheap
+   * (script, style, template, noscript) and skips text already inside
+   * an <a> element (at any nesting depth), then applies a cheap
    * substring check (includes) rather than the full regex.  Any false
    * positives (e.g. the placeholder without a valid trailing path)
    * are harmlessly handled downstream by buildFragmentFromMatches
@@ -88,9 +89,11 @@ javascript:(function () {
         acceptNode: (node) =>
           NON_RENDERED_TAGS.has(node.parentElement?.tagName)
             ? NodeFilter.FILTER_REJECT
-            : node.nodeValue.includes(PLACEHOLDER)
-              ? NodeFilter.FILTER_ACCEPT
-              : NodeFilter.FILTER_SKIP,
+            : node.parentElement?.closest('a')
+              ? NodeFilter.FILTER_SKIP
+              : node.nodeValue.includes(PLACEHOLDER)
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_SKIP,
       });
       while (walker.nextNode()) {
         if (!seen.has(walker.currentNode)) {
@@ -191,18 +194,18 @@ javascript:(function () {
   /**
    * Replace placeholder text in a single DOM text node with clickable links.
    *
-   * Skips the node if it has been detached from the DOM or is inside
-   * an <a> element (at any nesting depth). Delegates to buildFragmentFromMatches
-   * to split the text and produce a DocumentFragment of interleaved
-   * text nodes and link elements, then swaps the original text node
-   * for the fragment.
+   * Skips the node if it has been detached from the DOM (which can
+   * happen if overlapping scopes cause a parent to be replaced first).
+   * Delegates to buildFragmentFromMatches to split the text and produce
+   * a DocumentFragment of interleaved text nodes and link elements,
+   * then swaps the original text node for the fragment.
    *
    * Any error on an individual node is caught and logged so that
    * remaining nodes can still be processed.
    */
   function replaceTextNodeWithDocsLinks(node) {
     try {
-      if (!node.parentNode || node.parentElement?.closest('a')) return;
+      if (!node.parentNode) return;
       const fragment = buildFragmentFromMatches(node.nodeValue);
       if (!fragment) return;
       node.parentNode.replaceChild(fragment, node);
