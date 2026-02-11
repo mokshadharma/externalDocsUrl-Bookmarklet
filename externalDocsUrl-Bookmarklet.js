@@ -130,7 +130,7 @@ javascript:(function () {
          If the path contains malformed percent-encoding (e.g. %GG),
          decodeURI throws a URIError; fall back to the raw path. */
       let safePath;
-      try { safePath = encodeURI(decodeURI(path)); } catch (_) { safePath = path; }
+      try { safePath = encodeURI(decodeURI(path)); } catch { safePath = path; }
       const url = docsBaseUrl + safePath;
       fragment.appendChild(createDocsLink(url));
       lastIndex = match.index + match[0].length;
