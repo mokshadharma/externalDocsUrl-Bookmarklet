@@ -29,16 +29,20 @@ javascript:(function () {
 
   /**
    * Walk the DOM within the given scopes and collect all text nodes
-   * whose content matches the given pattern.
+   * whose content contains the ${externalDocsUrl} placeholder.
+   *
+   * Uses a simple substring check (includes) rather than the full
+   * regex as a cheap pre-filter. Any false positives (e.g. the
+   * placeholder without a valid trailing path) are harmlessly
+   * handled downstream by buildFragmentFromMatches returning null.
    */
-  function collectMatchingNodes(scopes, pattern) {
+  function collectMatchingNodes(scopes) {
+    const PLACEHOLDER = '${externalDocsUrl}';
     const nodes = [];
     scopes.forEach(function (scope) {
       const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
       while (walker.nextNode()) {
-        const nodeText = walker.currentNode.nodeValue;
-        pattern.lastIndex = 0;
-        if (nodeText && pattern.test(nodeText)) {
+        if (walker.currentNode.nodeValue.includes(PLACEHOLDER)) {
           nodes.push(walker.currentNode);
         }
       }
@@ -164,7 +168,7 @@ javascript:(function () {
     const placeholderPattern = /\$\{externalDocsUrl\}\/([\w./#?&=%+~-]+)/g;
 
     const scopes = findCodeContainers();
-    const nodes = collectMatchingNodes(scopes, placeholderPattern);
+    const nodes = collectMatchingNodes(scopes);
 
     nodes.forEach(function (node) {
       replaceTextNodeWithDocsLinks(node, docsBaseUrl, placeholderPattern);
