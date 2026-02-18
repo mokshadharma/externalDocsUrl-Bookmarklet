@@ -9,6 +9,19 @@ javascript:(function () {
    *
    * Links open in a new tab and do not trigger GitHub's
    * underlying code view click handlers.
+   *
+   * GitHub's React-based code view layers invisible overlays
+   * (a TEXTAREA for text selection and a cursor-container div)
+   * on top of the visible code lines. These overlays intercept
+   * all pointer events, making injected <a> elements visually
+   * present but not directly clickable. To work around this,
+   * the bookmarklet registers a document-level click listener
+   * that checks whether the click coordinates fall within any
+   * injected link's bounding rectangle (queried live via
+   * getBoundingClientRect) and opens the URL if so. A matching
+   * mousemove listener toggles a pointer cursor on hover.
+   * This approach leaves all native overlays and behaviors
+   * (text selection, copy-paste, line highlighting) intact.
    */
 
   const DOCS_BASE_URL = 'https://docs.github.com/en/enterprise-cloud@latest/';
@@ -65,9 +78,11 @@ javascript:(function () {
    * Non-rendered elements whose text content should never be processed.
    * When the walker's scope is document.body (fallback), these elements
    * would otherwise match — e.g. GitHub embeds file contents as JSON
-   * inside <script> tags for SPA hydration.
+   * inside <script> tags for SPA hydration. TEXTAREA is included
+   * because it can only hold plain text; inserting HTML children into
+   * one is meaningless and wastes processing.
    */
-  const NON_RENDERED_TAGS = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT']);
+  const NON_RENDERED_TAGS = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT', 'TEXTAREA']);
 
   /**
    * Walk the DOM within the given scopes and collect all text nodes
@@ -109,13 +124,20 @@ javascript:(function () {
   }
 
   /**
+   * Registry of injected link elements. Populated by createDocsLink
+   * and used by the document-level click/mousemove handlers to
+   * detect interactions via coordinate hit-testing.
+   */
+  const injectedLinks = [];
+
+  /**
    * Create a styled <a> element that opens the given URL in a new tab.
    *
-   * GitHub's code view attaches click handlers to code containers
-   * (for line selection, blame, etc.) that would intercept normal
-   * link clicks. stopPropagation prevents those handlers from firing,
-   * and the explicit window.open ensures reliable new-tab navigation
-   * regardless of GitHub's SPA router.
+   * The element is inserted into the visible code layer for display
+   * purposes and registered in injectedLinks for coordinate-based
+   * click detection. Direct click handlers are not relied upon
+   * because GitHub's overlays intercept pointer events before
+   * they reach the code layer.
    */
   function createDocsLink(url) {
     const link = document.createElement('a');
@@ -123,12 +145,8 @@ javascript:(function () {
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.textContent = url;
-    link.style.cssText = 'color: var(--fgColor-accent, var(--color-accent-fg, #1f6feb)); text-decoration: underline; cursor: pointer;';
-    link.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      window.open(url, '_blank', 'noopener');
-    }, true);
+    link.style.cssText = 'color: var(--fgColor-accent, var(--color-accent-fg, #1f6feb)); text-decoration: underline;';
+    injectedLinks.push({ element: link, url: url });
     return link;
   }
 
@@ -195,6 +213,67 @@ javascript:(function () {
   }
 
   /**
+   * Check whether a point (x, y) in viewport coordinates falls
+   * within any injected link's bounding rectangle. Returns the
+   * URL of the first matching link, or null if none match.
+   * Queries getBoundingClientRect live on each call so that
+   * scroll, resize, and layout changes are handled automatically.
+   */
+  function findLinkAtPoint(x, y) {
+    for (const entry of injectedLinks) {
+      if (!entry.element.isConnected) continue;
+      const rect = entry.element.getBoundingClientRect();
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        return entry.url;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Install document-level handlers for click and mousemove that
+   * delegate to injected links via coordinate hit-testing.
+   *
+   * Click handler: if the click falls on an injected link, opens
+   * the URL in a new tab. Uses the capturing phase so it fires
+   * before GitHub's own handlers can consume the event.
+   *
+   * Mousemove handler: toggles a pointer cursor on the topmost
+   * element at the mouse position when hovering over a link,
+   * restoring the original cursor when moving away.
+   */
+  function installDelegatedHandlers() {
+    let lastCursorTarget = null;
+    let savedCursor = '';
+
+    document.addEventListener('click', (e) => {
+      const url = findLinkAtPoint(e.clientX, e.clientY);
+      if (url) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(url, '_blank', 'noopener');
+      }
+    }, true);
+
+    document.addEventListener('mousemove', (e) => {
+      const url = findLinkAtPoint(e.clientX, e.clientY);
+      const topEl = document.elementFromPoint(e.clientX, e.clientY);
+      if (url && topEl) {
+        if (lastCursorTarget !== topEl) {
+          if (lastCursorTarget) lastCursorTarget.style.cursor = savedCursor;
+          savedCursor = topEl.style.cursor;
+          topEl.style.cursor = 'pointer';
+          lastCursorTarget = topEl;
+        }
+      } else if (lastCursorTarget) {
+        lastCursorTarget.style.cursor = savedCursor;
+        lastCursorTarget = null;
+        savedCursor = '';
+      }
+    });
+  }
+
+  /**
    * Replace placeholder text in a single DOM text node with clickable links.
    *
    * Skips the node if it has been detached from the DOM (which can
@@ -230,10 +309,14 @@ javascript:(function () {
     if (window.__externalDocsUrlBookmarkletRan === location.href) { return; }
     window.__externalDocsUrlBookmarkletRan = location.href;
 
-    const nodes = collectMatchingNodes(findCodeContainers());
+    const containers = findCodeContainers();
+    const nodes = collectMatchingNodes(containers);
     let replaced = 0;
     for (const node of nodes) {
       if (replaceTextNodeWithDocsLinks(node)) replaced++;
+    }
+    if (replaced > 0) {
+      installDelegatedHandlers();
     }
     console.log(
       'externalDocsUrl bookmarklet: replaced ' + replaced + ' occurrence(s) on\n' +
